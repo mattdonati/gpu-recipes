@@ -32,7 +32,7 @@ volumes:
     mountOptions: "implicit-dirs"
 
 workload:
-  gpus: 256 # This should be one of: {<= 8,  multiple of 8}
+  gpus: 16 # This should be one of: {<= 8,  multiple of 8}
   image: us-central1-docker.pkg.dev/deeplearning-images/reproducibility/pytorch-gpu-nemo-nccl:nemo24.07-gib1.0.3-A3U
   defaultArguments[]:
   arguments[]:
