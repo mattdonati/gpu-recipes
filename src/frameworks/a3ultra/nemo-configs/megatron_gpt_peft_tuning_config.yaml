@@ -1,0 +1,84 @@
+defaults:
+  - _self_
+
+
+# skip_evals = floor(0.125 * model.global_batch_size + 2)
+skip_evals: 3
+load_ckpt: True
+data_root: /peft/anarasimham-model-weights-sharing/data/gov_report/
+ckpt_root: /peft/anarasimham-model-weights-sharing/data/model/
+
+trainer:
+  devices: 8
+  num_nodes: 1
+  max_steps: 896 # consumed_samples = global_step * micro_batch_size * data_parallel_size * accumulate_grad_batches
+  # val_check_interval = floor((skip_evals + 1) * VAL_CHECK_INTERVAL / global_batch_size)
+  val_check_interval: 192
+  limit_val_batches: 1.0
+model:
+  num_layers: 80
+  seed: 1
+  tensor_model_parallel_size: 1
+  pipeline_model_parallel_size: 1
+  context_parallel_size: 2
+  eval_cp: null
+  global_batch_size: 8
+  micro_batch_size: 1
+  val_micro_batch_size: null
+  val_global_batch_size: 4
+  max_position_embeddings: 8192
+  encoder_seq_length: 8192
+  sequence_parallel: False
+  ub_tp_comm_overlap: True
+
+  ## Transformer Engine
+  fp8: True
+  fp8_params: True
+  fp8_hybrid: True # sets fp8_format = recipe.Format.HYBRID
+  fp8_amax_history_len: 4 # Number of steps for which amax history is recorded per tensor
+  fp8_amax_compute_algo: 'max' # 'most_recent' or 'max'. Algorithm for computing amax from history
+  reduce_amax: True # Perform reduction to sync amax tensors across GPUs after every iteration
+  fp8_e4m3: False
+  fp8_interval: 1
+  fp8_margin: 0
+  fp8_dot_product_attention: 0
+  cp_comm_type: 'a2a'
+  # Note: FP8_ACTIVATION was set in scripts, but config expects FP8_ACT. Using default.
+  activation_func_fp8_input_store: 0
+
+  external_cuda_graph: False
+  enable_cuda_graph: False
+  use_te_rng_tracker: True
+  enable_cg_fp8_weight_caching: False
+
+  cpu_offloading: False
+  cpu_offloading_num_layers: 20
+  cpu_offloading_activations: True
+  cpu_offloading_weights: False
+
+  memory_profile:
+    # Note: MEMORY_PROFILE env var not found, using default.
+    enabled: False
+    start_step: 1
+    end_step: 4
+    rank: 0
+    output_path: "/results/"
+
+  custom:
+    warmup: True
+    warmup_train_steps: 5
+    warmup_validation_steps: 5
+    reset_fp8_stats_after_warmup: 1
+
+optim:
+  lr: 0.0005
+  use_distributed_optimizer: True
+  overlap_param_gather_with_optimizer_step: False
+  sched:
+    warmup_steps: 0
+
+ddp:
+  overlap_grad_reduce: False
+  overlap_param_gather: False
+  fp8_param_gather: False
+  average_in_collective: False
